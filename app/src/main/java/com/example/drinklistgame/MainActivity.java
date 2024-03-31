@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int currentCardinality = 0;
     private Button nextButton;
+    private long[] cardinalityTimes = new long[4];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
 
         displayImages();
 
+
+
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -94,6 +97,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private void initializeImages(ArrayList<ImageInfo> imagesList, int[] imageIds) {
         imagesList.clear();
@@ -124,10 +129,15 @@ public class MainActivity extends AppCompatActivity {
             addImagesToContainer(rightContainer, new ArrayList<>(rightImages.subList(0, 1)), false);
         }else if (currentCardinality == 3) { // One-to-One
             Random random = new Random();
-            int leftIndex = random.nextInt(leftImages.size());
-            int rightIndex = random.nextInt(rightImages.size());
-            addImagesToContainer(leftContainer, new ArrayList<>(Collections.singletonList(leftImages.get(leftIndex))), true);
-            addImagesToContainer(rightContainer, new ArrayList<>(Collections.singletonList(rightImages.get(rightIndex))), false);
+            ImageInfo randomLeftImage = leftImages.get(random.nextInt(leftImages.size()));
+            ArrayList<ImageInfo> leftImage = new ArrayList<>();
+            leftImage.add(randomLeftImage);
+            addImagesToContainer(leftContainer, leftImage, true);
+
+            ImageInfo randomRightImage = rightImages.get(random.nextInt(rightImages.size()));
+            ArrayList<ImageInfo> rightImage = new ArrayList<>();
+            rightImage.add(randomRightImage);
+            addImagesToContainer(rightContainer, rightImage, false);
         }
     }
 
@@ -246,24 +256,35 @@ public class MainActivity extends AppCompatActivity {
         return new TrialSummary(completionTimeSec, errorRate);
     }
     private void checkSelectedImages() {
-        if (selectedLeftImageId != -1 && selectedRightImageId != -1) {
-            if (selectedLeftImageId == selectedRightImageId) {
-                trueCount++;
-                tv_TrueResult.setText(String.valueOf(trueCount));
-            } else {
-                falseCount++;
-                tv_FalseResult.setText(String.valueOf(falseCount));
-            }
+            if (selectedLeftImageId != -1 && selectedRightImageId != -1) {
+                long endTime = System.currentTimeMillis();
+                long completionTimeMs = endTime - startTime;
+                trialTimes.add(completionTimeMs);
 
-            selectedLeftImageId = -1;
-            selectedRightImageId = -1;
+                TrialResult result = calculateTrialResult();
+                TrialSummary summary = generateSummary(result);
+
+                trialCompletion.setText("Trial completed!\nCompletion Time: " + summary.getCompletionTimeSec() + " seconds");
+                tv_ErrorRate.setText("Error Rate: " + summary.getErrorRate() + "%");
+
+                if (selectedLeftImageId == selectedRightImageId) {
+                    trueCount++;
+                    tv_TrueResult.setText(String.valueOf(trueCount));
+                } else {
+                    falseCount++;
+                    tv_FalseResult.setText(String.valueOf(falseCount));
+                }
+
+                selectedLeftImageId = -1;
+                selectedRightImageId = -1;
+            }
         }
-    }
 
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
     }
+
 
     public void getDrinkList(int num) {
         switch (num) {
